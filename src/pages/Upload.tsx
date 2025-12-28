@@ -1,6 +1,6 @@
 import { useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { Upload as UploadIcon, File, CheckCircle2 } from "lucide-react";
+import { Upload as UploadIcon, File, CheckCircle2, CloudUpload, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
@@ -45,7 +45,6 @@ export default function UploadPage() {
 
     setStatus("uploading");
     
-    // Simulate upload progress
     for (let i = 0; i <= 60; i += 5) {
       await new Promise((r) => setTimeout(r, 100));
       setProgress(i);
@@ -53,13 +52,11 @@ export default function UploadPage() {
 
     setStatus("processing");
     
-    // Simulate processing
     for (let i = 60; i <= 100; i += 2) {
       await new Promise((r) => setTimeout(r, 150));
       setProgress(i);
     }
 
-    // Create video entry with mock analytics
     const newVideo = {
       id: crypto.randomUUID(),
       name: selectedFile.name,
@@ -129,7 +126,6 @@ export default function UploadPage() {
       description: "Your video has been processed successfully.",
     });
 
-    // Auto-redirect after short delay
     setTimeout(() => {
       navigate("/videos");
     }, 1500);
@@ -138,19 +134,33 @@ export default function UploadPage() {
   const statusText = {
     idle: "Ready to upload",
     uploading: "Uploading...",
-    processing: "Processing video...",
+    processing: "AI Analysis in progress...",
     completed: "Completed",
   };
 
+  const statusIcon = {
+    idle: CloudUpload,
+    uploading: UploadIcon,
+    processing: Sparkles,
+    completed: CheckCircle2,
+  };
+
+  const StatusIcon = statusIcon[status];
+
   return (
-    <div className="max-w-2xl mx-auto animate-fade-in">
-      <div className="text-center mb-8">
-        <h1 className="text-3xl font-bold text-foreground mb-2">Upload Video</h1>
-        <p className="text-muted-foreground">
-          Drag and drop your game footage or select a file
+    <div className="max-w-3xl mx-auto animate-fade-in">
+      {/* Header */}
+      <div className="text-center mb-12">
+        <h1 className="font-display text-4xl font-bold mb-4">
+          <span className="text-gradient">Upload</span>
+          <span className="text-foreground ml-2">Video</span>
+        </h1>
+        <p className="text-muted-foreground text-lg">
+          Drop your game footage and let AI analyze every play
         </p>
       </div>
 
+      {/* Upload Zone */}
       <div
         onDragOver={(e) => {
           e.preventDefault();
@@ -159,13 +169,19 @@ export default function UploadPage() {
         onDragLeave={() => setDragOver(false)}
         onDrop={handleDrop}
         className={cn(
-          "relative border-2 border-dashed rounded-2xl p-12 text-center transition-all duration-300",
+          "relative rounded-3xl p-12 text-center transition-all duration-500 overflow-hidden",
+          "border-2 border-dashed",
           dragOver
             ? "border-primary bg-primary/5 glow-primary"
-            : "border-border hover:border-muted-foreground",
-          status !== "idle" && "pointer-events-none opacity-60"
+            : "border-border/50 hover:border-primary/50",
+          status !== "idle" && "pointer-events-none"
         )}
       >
+        {/* Background pattern */}
+        <div className="absolute inset-0 opacity-20 pointer-events-none">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,hsl(var(--primary)/0.1),transparent_70%)]" />
+        </div>
+
         <input
           type="file"
           accept="video/*"
@@ -174,36 +190,76 @@ export default function UploadPage() {
           disabled={status !== "idle"}
         />
 
-        <div className="flex flex-col items-center gap-4">
-          {status === "completed" ? (
-            <CheckCircle2 className="w-16 h-16 text-success" />
-          ) : selectedFile ? (
-            <File className="w-16 h-16 text-primary" />
-          ) : (
-            <UploadIcon className="w-16 h-16 text-muted-foreground" />
-          )}
+        <div className="relative flex flex-col items-center gap-6">
+          {/* Icon */}
+          <div className={cn(
+            "relative w-24 h-24 rounded-3xl flex items-center justify-center transition-all duration-500",
+            status === "completed" 
+              ? "bg-success/20 text-success" 
+              : status !== "idle"
+              ? "bg-primary/20 text-primary animate-pulse"
+              : selectedFile 
+              ? "bg-primary/20 text-primary" 
+              : "bg-muted text-muted-foreground"
+          )}>
+            <StatusIcon className={cn(
+              "w-12 h-12 transition-transform duration-300",
+              status === "processing" && "animate-spin-slow"
+            )} />
+            {(dragOver || status === "uploading" || status === "processing") && (
+              <div className="absolute -inset-2 bg-primary/20 rounded-3xl blur-xl animate-pulse" />
+            )}
+          </div>
 
+          {/* Text */}
           <div>
-            <p className="text-lg font-medium text-foreground">
+            <p className="text-xl font-semibold text-foreground mb-2">
               {selectedFile ? selectedFile.name : "Drop video here"}
             </p>
-            <p className="text-sm text-muted-foreground mt-1">
+            <p className="text-muted-foreground">
               {selectedFile
                 ? `${(selectedFile.size / (1024 * 1024)).toFixed(2)} MB`
                 : "MP4, MOV, or AVI up to 2GB"}
             </p>
           </div>
+
+          {/* File type badges */}
+          {!selectedFile && status === "idle" && (
+            <div className="flex gap-2 mt-2">
+              {["MP4", "MOV", "AVI"].map((type) => (
+                <span key={type} className="px-3 py-1 rounded-full text-xs font-medium bg-muted text-muted-foreground">
+                  {type}
+                </span>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
       {/* Progress Section */}
       {status !== "idle" && (
-        <div className="mt-6 space-y-3 animate-fade-in">
-          <div className="flex justify-between text-sm">
-            <span className="text-muted-foreground">{statusText[status]}</span>
-            <span className="text-foreground font-medium">{progress}%</span>
+        <div className="mt-8 p-6 rounded-2xl bg-card border border-border/50 animate-fade-in">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <StatusIcon className={cn(
+                "w-5 h-5",
+                status === "completed" ? "text-success" : "text-primary"
+              )} />
+              <span className="font-semibold text-foreground">{statusText[status]}</span>
+            </div>
+            <span className="text-2xl font-bold text-gradient font-display">{progress}%</span>
           </div>
-          <Progress value={progress} className="h-2" />
+          <div className="relative">
+            <Progress value={progress} className="h-3" />
+            {status === "processing" && (
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-primary/20 to-transparent animate-shimmer rounded-full" />
+            )}
+          </div>
+          {status === "processing" && (
+            <p className="text-sm text-muted-foreground mt-4 text-center">
+              Detecting shots, tracking players, and generating insights...
+            </p>
+          )}
         </div>
       )}
 
@@ -213,10 +269,10 @@ export default function UploadPage() {
           size="lg"
           onClick={simulateUpload}
           disabled={!selectedFile || status !== "idle"}
-          className="min-w-[200px]"
+          className="min-w-[240px] h-14 text-lg btn-glow"
         >
           <UploadIcon className="w-5 h-5" />
-          {status === "idle" ? "Upload & Process" : statusText[status]}
+          {status === "idle" ? "Upload & Analyze" : statusText[status]}
         </Button>
       </div>
     </div>

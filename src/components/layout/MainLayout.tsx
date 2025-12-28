@@ -36,12 +36,19 @@ export function MainLayout({ children }: MainLayoutProps) {
 
   return (
     <SidebarContext.Provider value={{ collapsed, setCollapsed }}>
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen bg-background relative overflow-hidden">
+        {/* Background decorative elements */}
+        <div className="fixed inset-0 pointer-events-none overflow-hidden">
+          <div className="orb orb-primary w-[600px] h-[600px] -top-48 -right-48 opacity-30" />
+          <div className="orb orb-secondary w-[400px] h-[400px] bottom-0 left-1/4 opacity-20" style={{ animationDelay: "2s" }} />
+          <div className="orb orb-primary w-[300px] h-[300px] top-1/2 right-1/4 opacity-10" style={{ animationDelay: "4s" }} />
+        </div>
+        
         <TopBar backendStatus={backendStatus} videoRagStatus={videoRagStatus} />
         <Sidebar />
         <main 
-          className="pt-16 min-h-screen transition-all duration-300"
-          style={{ paddingLeft: collapsed ? "64px" : "256px" }}
+          className="relative pt-16 min-h-screen transition-all duration-300"
+          style={{ paddingLeft: collapsed ? "80px" : "288px" }}
         >
           <div className="p-8">
             {children}
